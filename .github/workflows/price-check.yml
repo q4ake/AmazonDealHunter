@@ -27,6 +27,14 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      - name: Restore price history
+        uses: actions/cache@v4
+        with:
+          path: data/prices.db
+          key: price-db-${{ github.run_id }}
+          restore-keys: |
+            price-db-
+
       - name: Install dependencies
         run: pip install -r requirements.txt
 
@@ -46,12 +54,3 @@ jobs:
             exit 1
           fi
           python -m src.main --provider keepa
-
-      - name: Preserve price history
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: price-history
-          path: data/prices.db
-          if-no-files-found: ignore
-          retention-days: 30
