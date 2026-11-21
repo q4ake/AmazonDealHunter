@@ -13,4 +13,4 @@ COPY data ./data
 
 # The container performs one check and exits. Use a scheduler (for example
 # GitHub Actions cron) to run it periodically.
-CMD ["python", "-m", "src.main", "--provider", "asin", "--input", "data/products.asin.example.json"]
+CMD ["python", "-m", "src.main", "--provider", "scavio", "--input", "data/products.scavio.example.json"]
