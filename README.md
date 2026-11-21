@@ -55,6 +55,29 @@ Supported marketplace codes: `us`, `uk`, `de`, `fr`, `jp`, `ca`, `it`, `es`, `in
 
 The adapter reads Keepa's current Amazon price first and falls back to the marketplace-new price when the Amazon price is unavailable. Keepa prices are converted from the marketplace's minor currency unit before being stored.
 
+## Automated checks and Docker
+
+The GitHub Actions workflow at `.github/workflows/price-check.yml` runs every 6 hours (UTC) and can also be started manually from the **Actions** tab. It restores and saves the SQLite price-history cache between runs.
+
+Add these repository secrets under **Settings → Secrets and variables → Actions**:
+
+- `KEEPA_API_KEY` (required for live checks)
+- `TELEGRAM_BOT_TOKEN` (optional)
+- `TELEGRAM_CHAT_ID` (optional)
+
+Optionally set the repository variable `MIN_DISCOUNT_PERCENT`; the default is 5.
+
+The workflow only runs after the repository's default branch contains the workflow file. GitHub may delay scheduled runs during high load, and scheduled workflows in public repositories can be automatically disabled after extended inactivity.
+
+Build and run a one-off Docker check:
+
+```bash
+docker build -t amazon-deal-hunter .
+docker run --rm --env-file .env -v "$PWD/data:/app/data" amazon-deal-hunter
+```
+
+The container performs one price check and exits. Use GitHub Actions cron or an external scheduler for recurring execution; Docker by itself does not keep the check running every few hours.
+
 ## Demo mode
 
 Demo mode requires no API key:
