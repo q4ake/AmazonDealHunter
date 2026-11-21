@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from src.notifier import TelegramNotifier
 from src.providers.keepa import KeepaAdapter
 from src.providers.asin_dev import AsinDevAdapter
+from src.providers.scavio import ScavioAdapter
 from src.storage import PriceStorage
 
 
@@ -29,7 +30,7 @@ def load_keepa_items(path: str):
     with open(path, "r", encoding="utf-8") as file:
         items = json.load(file)
     if not isinstance(items, list) or not items:
-        raise ValueError("Keepa ürün dosyası boş olmayan bir JSON listesi olmalıdır.")
+        raise ValueError("Ürün dosyası boş olmayan bir JSON listesi olmalıdır.")
     return items
 
 
@@ -48,10 +49,10 @@ def process_products(products, storage, notifier, min_discount):
         if previous > 0 and current < previous:
             discount = (previous - current) / previous * 100
             message = (
-                f"Fiyat düştü!\n{product['title']}\n"
-                f"Eski fiyat: {previous:.2f} {product['currency']}\n"
-                f"Yeni fiyat: {current:.2f} {product['currency']}\n"
-                f"İndirim: %{discount:.1f}\n{product['url']}"
+                f"Fiyat düştü!\\n{product['title']}\\n"
+                f"Eski fiyat: {previous:.2f} {product['currency']}\\n"
+                f"Yeni fiyat: {current:.2f} {product['currency']}\\n"
+                f"İndirim: %{discount:.1f}\\n{product['url']}"
             )
             if discount >= min_discount:
                 notifier.send(message)
@@ -64,7 +65,7 @@ def process_products(products, storage, notifier, min_discount):
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description="AmazonDealHunter price tracker")
-    parser.add_argument("--provider", choices=("demo", "keepa", "asin"), default="demo")
+    parser.add_argument("--provider", choices=("demo", "keepa", "asin", "scavio"), default="demo")
     parser.add_argument("--input", default=None, help="JSON product/ASIN list")
     args = parser.parse_args()
 
@@ -72,6 +73,7 @@ def main():
         "data/products.keepa.example.json"
         if args.provider == "keepa"
         else "data/products.asin.example.json" if args.provider == "asin"
+        else "data/products.scavio.example.json" if args.provider == "scavio"
         else "data/products.example.json"
     )
     input_path = args.input or default_input
@@ -88,6 +90,9 @@ def main():
         products = adapter.fetch(load_keepa_items(input_path))
     elif args.provider == "asin":
         adapter = AsinDevAdapter()
+        products = adapter.fetch(load_keepa_items(input_path))
+    elif args.provider == "scavio":
+        adapter = ScavioAdapter()
         products = adapter.fetch(load_keepa_items(input_path))
     else:
         products = load_products(input_path)
