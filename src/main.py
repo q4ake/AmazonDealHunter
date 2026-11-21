@@ -49,10 +49,10 @@ def process_products(products, storage, notifier, min_discount):
         if previous > 0 and current < previous:
             discount = (previous - current) / previous * 100
             message = (
-                f"Fiyat düştü!\\n{product['title']}\\n"
-                f"Eski fiyat: {previous:.2f} {product['currency']}\\n"
-                f"Yeni fiyat: {current:.2f} {product['currency']}\\n"
-                f"İndirim: %{discount:.1f}\\n{product['url']}"
+                f"Fiyat düştü!\n{product['title']}\n"
+                f"Eski fiyat: {previous:.2f} {product['currency']}\n"
+                f"Yeni fiyat: {current:.2f} {product['currency']}\n"
+                f"İndirim: %{discount:.1f}\n{product['url']}"
             )
             if discount >= min_discount:
                 notifier.send(message)
