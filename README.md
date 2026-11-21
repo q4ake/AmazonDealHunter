@@ -1,69 +1,89 @@
 # AmazonDealHunter
 
-Amazon ürünleri için fiyat takibi ve indirim alarmı altyapısı.
+Amazon mağazaları için ASIN tabanlı fiyat takibi ve indirim alarmı.
 
-> **Durum:** Bu depo çalışan bir başlangıç projesidir. SQLite fiyat geçmişi, indirim hesaplama ve isteğe bağlı Telegram bildirimi içerir. Amazon'dan otomatik ürün verisi çekmek için sağlayıcı adaptörü henüz tamamlanmamıştır; demo verisiyle çalışır. Amazon'un kullanım koşullarına ve erişim kurallarına uygun bir veri kaynağı/adaptör eklenmeden canlı Amazon taraması yaptığı iddia edilmez.
+## Features
 
-## Özellikler
+- Keepa API adapter for supported Amazon marketplaces
+- SQLite price history
+- Price-drop percentage calculation
+- Optional Telegram notifications
+- Demo mode for local testing
+- Configurable discount threshold
 
-- Ürünlerin fiyatlarını SQLite veritabanında saklama
-- Önceki fiyatla karşılaştırıp indirim yüzdesini hesaplama
-- İsteğe bağlı Telegram bot bildirimi
-- JSON dosyasından demo ürün verisi okuma
-- Amazon Türkiye gibi farklı mağazalar için genişletilebilir sağlayıcı arayüzü
+## Live mode (Keepa)
 
-## Kurulum
+Live mode uses the **Keepa API**. A Keepa API subscription/key is required; API requests consume Keepa tokens according to its plan.
 
-Python 3.10 veya üzeri gerekir.
+1. Install Python 3.10+ and dependencies:
 
 ```bash
 python -m venv .venv
-# Windows:
+# Windows
 .venv\\Scripts\\activate
-# macOS/Linux:
+# macOS/Linux
 source .venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
-`.env.example` dosyasını `.env` olarak kopyalayın. Telegram bildirimi için bot token'ı ve sohbet kimliğini girin. Ardından:
+2. Copy `.env.example` to `.env` and set `KEEPA_API_KEY`. Telegram settings are optional.
 
-```bash
-python -m src.main --input data/products.example.json
-```
-
-Telegram ayarları boş bırakılırsa uygulama terminale çıktı verir.
-
-## Ürün JSON biçimi
+3. Add ASINs and marketplace codes to `data/products.keepa.example.json`:
 
 ```json
 [
-  {
-    "asin": "B0EXAMPLE01",
-    "title": "Örnek ürün",
-    "url": "https://www.amazon.com.tr/dp/B0EXAMPLE01",
-    "price": 1299.90,
-    "currency": "TRY",
-    "store": "amazon.com.tr"
-  }
+  { "asin": "B0EXAMPLE01", "marketplace": "de" },
+  { "asin": "B0EXAMPLE02", "marketplace": "us" }
 ]
 ```
 
-## Yol haritası
+4. Run:
 
-- [x] SQLite fiyat geçmişi
-- [x] İndirim yüzdesi hesaplama
-- [x] Telegram bildirim altyapısı
-- [x] Demo veri sağlayıcısı
-- [ ] Amazon kullanım koşullarına uygun canlı veri sağlayıcısı
-- [ ] Hedef fiyat ve minimum indirim eşikleri
-- [ ] Zamanlanmış periyodik kontrol
-- [ ] Almanya, ABD ve Japonya mağazaları için adaptörler
+```bash
+python -m src.main --provider keepa
+```
 
-## Güvenli kullanım
+Or specify another list:
 
-CAPTCHA, oturum açma, erişim kısıtlaması veya diğer güvenlik önlemlerini aşmaya yönelik bir mekanizma içermez. Canlı veri entegrasyonu, ilgili mağazanın izin verdiği API veya veri erişim yöntemi üzerinden yapılmalıdır.
+```bash
+python -m src.main --provider keepa --input data/my-products.json
+```
 
-## Lisans
+Supported marketplace codes: `us`, `uk`, `de`, `fr`, `jp`, `ca`, `it`, `es`, `in`, `mx`, `br`.
+
+**Amazon Turkey note:** Keepa's currently documented marketplace list does not include Amazon.com.tr. The Keepa adapter therefore rejects `marketplace: "tr"` rather than silently returning incorrect data. A separate compliant Turkish data provider is required for Amazon Turkey.
+
+The adapter reads Keepa's current Amazon price first and falls back to the marketplace-new price when the Amazon price is unavailable. Keepa prices are converted from the marketplace's minor currency unit before being stored.
+
+## Demo mode
+
+Demo mode requires no API key:
+
+```bash
+python -m src.main --provider demo
+```
+
+It reads `data/products.example.json`. To test a price drop, run it again after changing the example price; the previous value is stored in SQLite.
+
+## Environment variables
+
+| Variable | Required | Description |
+|---|---|---|
+| `KEEPA_API_KEY` | Live mode | Keepa API key |
+| `TELEGRAM_BOT_TOKEN` | No | Telegram bot token |
+| `TELEGRAM_CHAT_ID` | No | Telegram destination |
+| `MIN_DISCOUNT_PERCENT` | No | Minimum discount to notify (default: 5) |
+| `DATABASE_PATH` | No | SQLite database path |
+
+If Telegram credentials are omitted, notifications are printed to the console.
+
+## Limitations and responsible use
+
+- Live marketplace data depends on Keepa coverage, API availability, and the user's token balance.
+- The project does not scrape Amazon pages or bypass CAPTCHAs, logins, rate limits, or access controls.
+- Price checks are performed when the program is run. A scheduler or always-on worker must be configured separately for recurring checks.
+- Keepa's API data may not be instantaneous; consult its documentation for update and token behavior.
+
+## License
 
 MIT
