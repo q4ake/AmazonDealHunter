@@ -43,14 +43,14 @@ jobs:
 
       - name: Fetch prices and notify on drops
         env:
-          ASIN_API_KEY: ${{ secrets.ASIN_API_KEY }}
+          SCAVIO_API_KEY: ${{ secrets.SCAVIO_API_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           MIN_DISCOUNT_PERCENT: ${{ vars.MIN_DISCOUNT_PERCENT || '5' }}
           DATABASE_PATH: data/prices.db
         run: |
-          if [ -z "$ASIN_API_KEY" ]; then
-            echo "Missing repository secret: ASIN_API_KEY"
+          if [ -z "$SCAVIO_API_KEY" ]; then
+            echo "Missing repository secret: SCAVIO_API_KEY"
             exit 1
           fi
-          python -m src.main --provider asin --input data/products.asin.example.json
+          python -m src.main --provider scavio --input data/products.scavio.example.json
