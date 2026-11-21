@@ -1,5 +1,6 @@
+import os
 import unittest
-from unittest.mock import Mock
+from unittest.mock import patch
 
 from src.providers.asin_dev import AsinDevAdapter
 
@@ -33,8 +34,9 @@ class AsinDevAdapterTests(unittest.TestCase):
             adapter.fetch([{"asin": "BAD", "marketplace": "de"}])
 
     def test_missing_api_key_is_clear_error(self):
-        with self.assertRaisesRegex(ValueError, "ASIN_API_KEY"):
-            AsinDevAdapter(api_key="")
+        with patch.dict(os.environ, {"ASIN_API_KEY": ""}):
+            with self.assertRaisesRegex(ValueError, "ASIN_API_KEY"):
+                AsinDevAdapter(api_key="")
 
 
 if __name__ == "__main__":
