@@ -4,50 +4,55 @@ Amazon product price tracking, price-drop detection and Telegram notifications.
 
 ## Features
 
-- Asin.dev adapter with a free daily tracking tier (up to 50 products)
-- Optional Keepa adapter for supported marketplaces
+- Scavio adapter for Amazon Turkey (amazon.com.tr), Turkish titles and TRY prices
+- Optional Asin.dev adapter for its supported non-Turkey marketplaces
+- Optional Keepa adapter for its supported non-Turkey marketplaces
 - SQLite price history and local price-drop comparison
 - Optional Telegram notifications
 - Docker image and scheduled GitHub Actions workflow
 - Demo mode for local development
 
-## Recommended live mode: Asin.dev free tier
+## Recommended live mode: Scavio (Amazon Turkey)
 
-Asin.dev documents a free tier for up to 50 products checked daily. Confirming an account email adds 1,500 trial credits. Each scheduled product check uses one credit; the provider manages the daily check schedule. The API's documented marketplace list does **not** include Amazon Turkey.
+Scavio documents Amazon Turkey support using `country: "tr"` and `language: "TR"`. Its product-detail endpoint accepts an ASIN and returns normalized product data including current price, currency, title and URL. The provider currently documents 1 credit per successful search, product-detail or offers call, and 50 free credits for new accounts. Confirm current pricing and limits in your dashboard before relying on it.
 
-1. Create an account at https://www.asin.dev and confirm your email.
-2. Create an API key in the dashboard.
-3. Copy `.env.example` to `.env` and set `ASIN_API_KEY`.
-4. Add products to `data/products.asin.example.json`:
+1. Create an account at https://www.scavio.dev/tr/amazon-api.
+2. Create an API key in the Scavio dashboard.
+3. Copy `.env.example` to `.env` and set `SCAVIO_API_KEY`.
+4. Add products to `data/products.scavio.example.json`:
 
 ```json
 [
-  { "asin": "B09DFCB66S", "marketplace": "com" },
-  { "asin": "YOUR_ASIN_HERE", "marketplace": "de" }
+  { "asin": "B0CDMB5ZQW", "country": "tr", "language": "TR" },
+  { "asin": "YOUR_ASIN_HERE", "country": "tr", "language": "TR" }
 ]
 ```
 
-Supported marketplace codes: `com`, `co.uk`, `de`, `fr`, `it`, `es`, `ca`, `co.jp`, `com.br`, `com.mx`, `in`.
-
 Run a live check:
+
+```bash
+python -m src.main --provider scavio
+```
+
+Each product detail lookup costs one Scavio credit according to its documentation. The first successful run creates a local price-history record; later runs compare the newly fetched TRY price with the previous one. Without Telegram credentials, notifications are printed to the console.
+
+## Optional live mode: Asin.dev
+
+Asin.dev can track products on its supported marketplaces, but its documented list does not include Amazon Turkey. Set `ASIN_API_KEY` and run:
 
 ```bash
 python -m src.main --provider asin
 ```
 
-The first run registers products in your Asin.dev watchlist and requests an initial check. Later runs read the latest tracked prices. Asin.dev performs recurring daily checks on its side; the GitHub Actions workflow reads the latest values every six hours and compares them with the local SQLite history to send Telegram drop alerts.
-
-The free tier is limited to 50 tracked products and daily checks. Faster checks and larger watchlists require a paid plan or credits. See the provider's current limits and terms before relying on it for production.
-
 ## Optional live mode: Keepa
 
-Keepa remains available as a paid alternative. Set `KEEPA_API_KEY`, then run:
+Keepa remains available as a paid alternative for supported marketplaces. Set `KEEPA_API_KEY`, then run:
 
 ```bash
 python -m src.main --provider keepa
 ```
 
-Keepa supports `us`, `uk`, `de`, `fr`, `jp`, `ca`, `it`, `es`, `in`, `mx`, and `br`. It does not currently list Amazon.com.tr.
+Keepa does not currently list Amazon.com.tr.
 
 ## GitHub Actions automation
 
@@ -55,7 +60,7 @@ The workflow at `.github/workflows/price-check.yml` runs every six hours (UTC) a
 
 Add these repository secrets under **Settings → Secrets and variables → Actions**:
 
-- `ASIN_API_KEY` (required for the default live workflow)
+- `SCAVIO_API_KEY` (required for the default Amazon Turkey workflow)
 - `TELEGRAM_BOT_TOKEN` (optional)
 - `TELEGRAM_CHAT_ID` (optional)
 
@@ -88,7 +93,8 @@ It reads `data/products.example.json`. Change the sample price and run it again 
 
 | Variable | Required | Description |
 |---|---|---|
-| `ASIN_API_KEY` | Asin live mode | Asin.dev API key |
+| `SCAVIO_API_KEY` | Scavio live mode | Scavio API key for Amazon Turkey |
+| `ASIN_API_KEY` | Asin.dev live mode | Asin.dev API key |
 | `KEEPA_API_KEY` | Keepa live mode | Keepa API key |
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot token |
 | `TELEGRAM_CHAT_ID` | No | Telegram destination |
@@ -99,11 +105,10 @@ Without Telegram credentials, alerts are printed to the console.
 
 ## Limitations and responsible use
 
-- Amazon Turkey is not in the documented marketplace list for either current provider. A separate provider with explicit Amazon.com.tr coverage and suitable terms is needed.
 - Live price checks depend on the provider's coverage, rate limits, account status and API availability.
+- Scavio's documented product endpoint is used for current product price; price history for this project starts accumulating locally after the first successful run.
 - This project does not bypass CAPTCHAs, logins, rate limits or access controls.
-- Price history starts accumulating after the product is first tracked by this project/provider; it is not a guarantee of complete historical data.
-- Telegram alerts are generated when this workflow compares a newly observed provider price against the previous locally stored price.
+- Check each provider's current terms and pricing before production use.
 
 ## License
 
