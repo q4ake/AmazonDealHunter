@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from src.notifier import TelegramNotifier
 from src.providers.keepa import KeepaAdapter
+from src.providers.asin_dev import AsinDevAdapter
 from src.storage import PriceStorage
 
 
@@ -63,13 +64,14 @@ def process_products(products, storage, notifier, min_discount):
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description="AmazonDealHunter price tracker")
-    parser.add_argument("--provider", choices=("demo", "keepa"), default="demo")
+    parser.add_argument("--provider", choices=("demo", "keepa", "asin"), default="demo")
     parser.add_argument("--input", default=None, help="JSON product/ASIN list")
     args = parser.parse_args()
 
     default_input = (
         "data/products.keepa.example.json"
         if args.provider == "keepa"
+        else "data/products.asin.example.json" if args.provider == "asin"
         else "data/products.example.json"
     )
     input_path = args.input or default_input
@@ -83,6 +85,9 @@ def main():
 
     if args.provider == "keepa":
         adapter = KeepaAdapter()
+        products = adapter.fetch(load_keepa_items(input_path))
+    elif args.provider == "asin":
+        adapter = AsinDevAdapter()
         products = adapter.fetch(load_keepa_items(input_path))
     else:
         products = load_products(input_path)
