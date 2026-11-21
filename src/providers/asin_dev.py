@@ -9,6 +9,11 @@ import requests
 
 
 BASE_URL = "https://www.asin.dev/api/v1"
+MARKETPLACE_CURRENCIES = {
+    "com": "USD", "co.uk": "GBP", "de": "EUR", "fr": "EUR",
+    "it": "EUR", "es": "EUR", "ca": "CAD", "co.jp": "JPY",
+    "com.br": "BRL", "com.mx": "MXN", "in": "INR",
+}
 
 
 class AsinDevAdapter:
@@ -58,6 +63,12 @@ class AsinDevAdapter:
             marketplace = str(item.get("marketplace", "de")).strip().lower()
             if len(asin) != 10 or not asin.isalnum():
                 raise ValueError(f"Invalid ASIN: {asin!r}")
+            if marketplace not in MARKETPLACE_CURRENCIES:
+                supported = ", ".join(sorted(MARKETPLACE_CURRENCIES))
+                raise ValueError(
+                    f"Unsupported marketplace {marketplace!r}. Supported: {supported}. "
+                    "Amazon Turkey (tr) is not currently supported by this provider."
+                )
 
             key = (asin, marketplace)
             product = by_key.get(key)
@@ -93,7 +104,7 @@ class AsinDevAdapter:
                 "title": product.get("title") or asin,
                 "url": product.get("url") or f"https://www.amazon.{marketplace}/dp/{asin}",
                 "price": float(price),
-                "currency": product.get("currency") or "EUR",
+                "currency": product.get("currency") or MARKETPLACE_CURRENCIES[marketplace],
                 "store": f"amazon.{marketplace}",
             })
 
